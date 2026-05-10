@@ -23,8 +23,9 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const today = todayISO();
   const weekStart = getWeekStartISO();
+  const isAdmin = canSeeAll(profile);
 
-  // Fetching all sessions with profiles to show student names for common use
+  // Fetching sessions. Admins see everything, students see only their own.
   let query = supabase
     .from("study_sessions")
     .select("*, profiles(full_name)")
@@ -32,10 +33,9 @@ export default async function DashboardPage() {
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
 
-  // Disabled filter to allow common visibility between study partners
-  // if (!canSeeAll(profile)) {
-  //   query = query.eq("student_id", profile.id);
-  // }
+  if (!isAdmin) {
+    query = query.eq("student_id", profile.id);
+  }
 
   const { data: weekSessions = [] } = await query;
 
@@ -46,9 +46,9 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(8);
 
-  // if (!canSeeAll(profile)) {
-  //   recentQuery = recentQuery.eq("student_id", profile.id);
-  // }
+  if (!isAdmin) {
+    recentQuery = recentQuery.eq("student_id", profile.id);
+  }
 
   const { data: recentSessions = [] } = await recentQuery;
 
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Dashboard"
-        description="Bugün, bu hafta ve son çalışma kayıtlarının hızlı özeti."
+        description={isAdmin ? "Tüm öğrencilerin çalışma özeti." : "Bugün, bu hafta ve son çalışma kayıtlarının hızlı özeti."}
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -119,7 +119,9 @@ export default async function DashboardPage() {
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-black">Son çalışma kayıtları</h2>
+          <h2 className="text-xl font-black">
+            {isAdmin ? "Tüm çalışma kayıtları" : "Son çalışma kayıtları"}
+          </h2>
           <Button asChild variant="outline">
             <Link href="/study/new">Yeni Kayıt</Link>
           </Button>
@@ -136,7 +138,7 @@ export default async function DashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Öğrenci</TableHead>
+                    {isAdmin && <TableHead>Öğrenci</TableHead>}
                     <TableHead>Tarih</TableHead>
                     <TableHead>Ders</TableHead>
                     <TableHead>Konu</TableHead>
@@ -148,9 +150,11 @@ export default async function DashboardPage() {
                 <TableBody>
                   {recent.map((session) => (
                     <TableRow key={session.id}>
-                      <TableCell className="font-bold text-primary">
-                        {session.profiles?.full_name || "Bilinmiyor"}
-                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="font-bold text-primary">
+                          {session.profiles?.full_name || "Bilinmiyor"}
+                        </TableCell>
+                      )}
                       <TableCell>{formatDateTR(session.date)}</TableCell>
                       <TableCell className="font-semibold">{session.subject}</TableCell>
                       <TableCell>{session.topic}</TableCell>
