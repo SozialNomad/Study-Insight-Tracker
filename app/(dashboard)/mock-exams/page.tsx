@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Pencil } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +19,8 @@ import { canSeeAll, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { MockExam, MockExamSubjectResult } from "@/lib/types/database";
 import { formatDateTR } from "@/lib/utils";
+
+import { DeleteExamButton } from "./_components/delete-exam-button";
 
 type MockExamWithResults = MockExam & {
   mock_exam_subject_results: MockExamSubjectResult[];
@@ -59,12 +63,22 @@ export default async function MockExamsPage() {
           {exams.map((exam) => (
             <Card key={exam.id}>
               <CardHeader>
-                <CardTitle className="flex flex-wrap items-center gap-3">
-                  {exam.exam_name}
-                  <Badge>{exam.exam_type}</Badge>
-                  <span className="text-sm font-semibold text-muted-foreground">
-                    {formatDateTR(exam.date)}
-                  </span>
+                <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {exam.exam_name}
+                    <Badge>{exam.exam_type}</Badge>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {formatDateTR(exam.date)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="rounded-xl" asChild>
+                      <Link href={`/mock-exams/${exam.id}/edit`}>
+                        <Pencil className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <DeleteExamButton id={exam.id} />
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>

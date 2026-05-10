@@ -103,6 +103,98 @@ export async function createMockExam(
   redirect("/mock-exams");
 }
 
+export async function updateMockExam(
+  examId: string,
+  _prevState: MockExamActionState,
+  formData: FormData
+): Promise<MockExamActionState> {
+  const parsed = mockExamSchema.safeParse({
+    date: formData.get("date"),
+    exam_type: formData.get("exam_type"),
+    exam_name: formData.get("exam_name"),
+    source: formData.get("source") || "",
+    notes: formData.get("notes") || ""
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Deneme bilgilerini kontrol edin." };
+  }
+
+  const subjectRows = SUBJECTS.map((subject) => ({
+    subject,
+    total_questions: numberField(formData, `${subject}_total`),
+    correct_answers: numberField(formData, `${subject}_correct`),
+    wrong_answers: numberField(formData, `${subject}_wrong`),
+    empty_answers: numberField(formData, `${subject}_empty`)
+  })).filter(
+    (row) =>
+      row.total_questions > 0 ||
+      row.correct_answers > 0 ||
+      row.wrong_answers > 0 ||
+      row.empty_answers > 0
+  );
+
+  if (subjectRows.length === 0) {
+    return { error: "En az bir ders için sonuç girilmeli." };
+  }
+
+  const { user } = await requireProfile();
+  const supabase = await createClient();
+
+  // Update mock_exam
+  const { error: examError } = await supabase
+    .from("mock_exams")
+    .update({
+      date: parsed.data.date,
+      exam_type: parsed.data.exam_type,
+      exam_name: parsed.data.exam_name,
+      source: parsed.data.source || null,
+      notes: parsed.data.notes || null
+    })
+    .eq("id", examId)
+    .eq("student_id", user.id);
+
+  if (examError) {
+    return { error: examError.message };
+  }
+
+  // Delete old results and insert new ones
+  await supabase.from("mock_exam_subject_results").delete().eq("mock_exam_id", examId);
+
+  const { error: rowsError } = await supabase.from("mock_exam_subject_results").insert(
+    subjectRows.map((row) => ({
+      mock_exam_id: examId,
+      ...row
+    }))
+  );
+
+  if (rowsError) {
+    return { error: rowsError.message };
+  }
+
+  revalidatePath("/mock-exams");
+  revalidatePath("/mock-exams/analytics");
+  redirect("/mock-exams");
+}
+
+export async function deleteMockExam(examId: string) {
+  const { user } = await requireProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("mock_exams")
+    .delete()
+    .eq("id", examId)
+    .eq("student_id", user.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/mock-exams");
+  revalidatePath("/mock-exams/analytics");
+}
+
 function numberField(formData: FormData, name: string) {
   const value = formData.get(name);
   if (value === null || value === "") return 0;

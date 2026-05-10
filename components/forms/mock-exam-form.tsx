@@ -8,15 +8,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createMockExam, type MockExamActionState } from "@/lib/actions/mock-exams";
+import { createMockExam, updateMockExam, type MockExamActionState } from "@/lib/actions/mock-exams";
 import { EXAM_TYPES, SUBJECTS } from "@/lib/constants";
+import type { MockExam, MockExamSubjectResult } from "@/lib/types/database";
 import { todayISO } from "@/lib/utils";
+
+type MockExamWithResults = MockExam & {
+  mock_exam_subject_results: MockExamSubjectResult[];
+};
 
 const initialState: MockExamActionState = {};
 
-export function MockExamForm() {
-  const [state, formAction, pending] = useActionState(createMockExam, initialState);
-  const [scores, setScores] = useState<Record<string, { correct: number; wrong: number }>>({});
+export function MockExamForm({ initialData }: { initialData?: MockExamWithResults }) {
+  const isEdit = !!initialData;
+  const action = isEdit ? updateMockExam.bind(null, initialData.id) : createMockExam;
+  const [state, formAction, pending] = useActionState(action, initialState);
+
+  const [scores, setScores] = useState<Record<string, { correct: number; wrong: number }>>(() => {
+    if (!initialData) return {};
+    const initialScores: Record<string, { correct: number; wrong: number }> = {};
+    initialData.mock_exam_subject_results.forEach((res) => {
+      initialScores[res.subject] = { correct: res.correct_answers, wrong: res.wrong_answers };
+    });
+    return initialScores;
+  });
 
   function updateScore(subject: string, key: "correct" | "wrong", value: string) {
     setScores((current) => ({
@@ -32,7 +47,7 @@ export function MockExamForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Deneme sonucu ekle</CardTitle>
+        <CardTitle>{isEdit ? "Denemeyi düzenle" : "Deneme sonucu ekle"}</CardTitle>
         <CardDescription>
           Her ders için doğru, yanlış, boş ve toplam soru sayılarını gir; net otomatik hesaplanır.
         </CardDescription>
@@ -41,20 +56,30 @@ export function MockExamForm() {
         <form action={formAction} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Tarih">
-              <Input name="date" type="date" required defaultValue={todayISO()} />
+              <Input
+                name="date"
+                type="date"
+                required
+                defaultValue={initialData?.date || todayISO()}
+              />
             </Field>
             <Field label="Sınav Türü">
-              <Select name="exam_type" required defaultValue="AYT">
+              <Select name="exam_type" required defaultValue={initialData?.exam_type || "AYT"}>
                 {EXAM_TYPES.map((type) => (
                   <option key={type}>{type}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Deneme Adı">
-              <Input name="exam_name" required placeholder="Örn. AYT Deneme 1" />
+              <Input
+                name="exam_name"
+                required
+                placeholder="Örn. AYT Deneme 1"
+                defaultValue={initialData?.exam_name}
+              />
             </Field>
             <Field label="Kaynak">
-              <Input name="source" placeholder="Örn. 345" />
+              <Input name="source" placeholder="Örn. 345" defaultValue={initialData?.source || ""} />
             </Field>
           </div>
 
@@ -68,6 +93,9 @@ export function MockExamForm() {
               <span>Net</span>
             </div>
             {SUBJECTS.map((subject) => {
+              const result = initialData?.mock_exam_subject_results.find(
+                (r) => r.subject === subject
+              );
               const net = (scores[subject]?.correct ?? 0) - (scores[subject]?.wrong ?? 0) / 4;
 
               return (
@@ -76,12 +104,19 @@ export function MockExamForm() {
                   className="grid grid-cols-[1.2fr_repeat(5,0.8fr)] gap-2 border-t px-4 py-3 text-sm"
                 >
                   <span className="self-center font-bold">{subject}</span>
-                  <Input name={`${subject}_total`} type="number" min={0} inputMode="numeric" />
+                  <Input
+                    name={`${subject}_total`}
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    defaultValue={result?.total_questions}
+                  />
                   <Input
                     name={`${subject}_correct`}
                     type="number"
                     min={0}
                     inputMode="numeric"
+                    defaultValue={result?.correct_answers}
                     onChange={(event) => updateScore(subject, "correct", event.target.value)}
                   />
                   <Input
@@ -89,9 +124,16 @@ export function MockExamForm() {
                     type="number"
                     min={0}
                     inputMode="numeric"
+                    defaultValue={result?.wrong_answers}
                     onChange={(event) => updateScore(subject, "wrong", event.target.value)}
                   />
-                  <Input name={`${subject}_empty`} type="number" min={0} inputMode="numeric" />
+                  <Input
+                    name={`${subject}_empty`}
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    defaultValue={result?.empty_answers}
+                  />
                   <span className="self-center rounded-xl bg-primary/10 px-2 py-2 text-center font-black text-primary">
                     {net.toFixed(2)}
                   </span>
@@ -101,7 +143,11 @@ export function MockExamForm() {
           </div>
 
           <Field label="Notlar">
-            <Textarea name="notes" placeholder="Deneme sonrası kısa gözlem..." />
+            <Textarea
+              name="notes"
+              placeholder="Deneme sonrası kısa gözlem..."
+              defaultValue={initialData?.notes || ""}
+            />
           </Field>
 
           {state.error ? (
@@ -111,7 +157,7 @@ export function MockExamForm() {
           ) : null}
 
           <Button type="submit" disabled={pending}>
-            {pending ? "Kaydediliyor..." : "Kaydet"}
+            {pending ? "Kaydediliyor..." : isEdit ? "Güncelle" : "Kaydet"}
           </Button>
         </form>
       </CardContent>

@@ -23,13 +23,9 @@ export default async function MockExamAnalyticsPage() {
 
   const { data = [] } = await query;
   const exams = (data ?? []) as MockExamWithResults[];
-  const subjects = Array.from(
-    new Set(exams.flatMap((exam) => exam.mock_exam_subject_results.map((row) => row.subject)))
-  );
 
-  const netRows = buildRows(exams, (row) => Number(row.net_score));
-  const wrongRows = buildRows(exams, (row) => row.wrong_answers);
-  const emptyRows = buildRows(exams, (row) => row.empty_answers);
+  const tytExams = exams.filter((e) => e.exam_type === "TYT");
+  const aytExams = exams.filter((e) => e.exam_type === "AYT");
 
   return (
     <>
@@ -44,14 +40,46 @@ export default async function MockExamAnalyticsPage() {
           description="Deneme sonucu ekledikten sonra ders bazlı trendler burada görünecek."
         />
       ) : (
-        <MockExamCharts
-          netRows={netRows}
-          wrongRows={wrongRows}
-          emptyRows={emptyRows}
-          subjects={subjects}
-        />
+        <div className="space-y-12">
+          {tytExams.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="font-serif text-3xl font-black tracking-tight text-foreground">
+                TYT Gelişimi
+              </h2>
+              <AnalyticsGroup exams={tytExams} />
+            </div>
+          )}
+
+          {aytExams.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="font-serif text-3xl font-black tracking-tight text-foreground">
+                AYT Gelişimi
+              </h2>
+              <AnalyticsGroup exams={aytExams} />
+            </div>
+          )}
+        </div>
       )}
     </>
+  );
+}
+
+function AnalyticsGroup({ exams }: { exams: MockExamWithResults[] }) {
+  const subjects = Array.from(
+    new Set(exams.flatMap((exam) => exam.mock_exam_subject_results.map((row) => row.subject)))
+  );
+
+  const netRows = buildRows(exams, (row) => Number(row.net_score));
+  const wrongRows = buildRows(exams, (row) => row.wrong_answers);
+  const emptyRows = buildRows(exams, (row) => row.empty_answers);
+
+  return (
+    <MockExamCharts
+      netRows={netRows}
+      wrongRows={wrongRows}
+      emptyRows={emptyRows}
+      subjects={subjects}
+    />
   );
 }
 
