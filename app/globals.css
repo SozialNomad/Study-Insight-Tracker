@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 45% 96%;
+  --foreground: 216 31% 17%;
+  --card: 0 0% 100%;
+  --card-foreground: 216 31% 17%;
+  --primary: 168 76% 30%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 35 92% 90%;
+  --secondary-foreground: 28 50% 22%;
+  --muted: 38 33% 91%;
+  --muted-foreground: 216 14% 42%;
+  --accent: 204 85% 88%;
+  --accent-foreground: 210 50% 22%;
+  --destructive: 4 76% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 38 24% 84%;
+  --input: 38 24% 84%;
+  --ring: 168 76% 30%;
+  --radius: 1.1rem;
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply min-h-screen bg-background text-foreground antialiased;
+  font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.18), transparent 34rem),
+    radial-gradient(circle at 80% 20%, rgba(251, 146, 60, 0.16), transparent 28rem),
+    linear-gradient(135deg, hsl(var(--background)), #eef7f3 60%, #fff7ed);
+}
+
+.font-serif {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+::selection {
+  background: rgba(20, 184, 166, 0.25);
+}
