@@ -7,16 +7,9 @@ import { z } from "zod";
 import { requireProfile } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/types/database";
 
-type MutationResult = Promise<{ error: { message: string } | null }>;
-type InsertReturningId = {
-  insert: (value: unknown) => {
-    select: (columns: string) => {
-      single: () => Promise<{ data: { id: string } | null; error: { message: string } | null }>;
-    };
-  };
-};
-
+type MockResultInsert = Database["public"]["Tables"]["mock_exam_subject_results"]["Insert"];
 const mockExamSchema = z.object({
   date: z.string().min(1, "Tarih zorunlu."),
   exam_type: z.enum(["TYT", "AYT"]),
@@ -66,12 +59,7 @@ export async function createMockExam(
   const { user } = await requireProfile();
   const supabase = await createClient();
 
-  const mockExamTable = supabase.from("mock_exams") as unknown as InsertReturningId;
-  const mockResultsTable = supabase.from("mock_exam_subject_results") as unknown as {
-    insert: (value: unknown) => MutationResult;
-  };
-
-  const { data: exam, error: examError } = await mockExamTable
+  const { data: exam, error: examError } = await (supabase.from("mock_exams") as any)
     .insert({
       student_id: user.id,
       date: parsed.data.date,
@@ -87,7 +75,7 @@ export async function createMockExam(
     return { error: examError?.message ?? "Deneme kaydedilemedi." };
   }
 
-  const { error: rowsError } = await mockResultsTable.insert(
+  const { error: rowsError } = await (supabase.from("mock_exam_subject_results") as any).insert(
     subjectRows.map((row) => ({
       mock_exam_id: exam.id,
       ...row
@@ -142,8 +130,7 @@ export async function updateMockExam(
   const supabase = await createClient();
 
   // Update mock_exam
-  const { error: examError } = await supabase
-    .from("mock_exams")
+  const { error: examError } = await (supabase.from("mock_exams") as any)
     .update({
       date: parsed.data.date,
       exam_type: parsed.data.exam_type,
@@ -159,9 +146,9 @@ export async function updateMockExam(
   }
 
   // Delete old results and insert new ones
-  await supabase.from("mock_exam_subject_results").delete().eq("mock_exam_id", examId);
+  await (supabase.from("mock_exam_subject_results") as any).delete().eq("mock_exam_id", examId);
 
-  const { error: rowsError } = await supabase.from("mock_exam_subject_results").insert(
+  const { error: rowsError } = await (supabase.from("mock_exam_subject_results") as any).insert(
     subjectRows.map((row) => ({
       mock_exam_id: examId,
       ...row
