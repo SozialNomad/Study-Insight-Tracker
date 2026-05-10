@@ -1,31 +1,32 @@
 # Study Insight Tracker
 
-Türkçe arayüzlü, Next.js App Router tabanlı öğrenci çalışma takip paneli.
+A student study tracking dashboard based on Next.js App Router with a Turkish interface.
 
-## Özellikler
+## Features
 
-- Supabase Auth ile e-posta/şifre girişi
-- `student` ve `admin` rolleri için RLS destekli veri erişimi
-- Günlük çalışma kaydı ekleme
-- Çalışma geçmişi, filtreler ve toplamlar
-- Dashboard özet kartları
-- Recharts ile çalışma ve soru analitiği
-- Deneme sonucu ekleme, ders bazlı net hesaplama ve trend grafikleri
-- Konu bazlı zayıflık analizi
-- Supabase Storage ile görsel yükleme ve önizleme
-- Veri uydurmayan AI rapor ajanları
+- Email/Password login with Supabase Auth
+- RLS-supported data access for `student` and `admin` roles
+- Daily study session logging
+- Study history, filters, and totals
+- Dashboard summary cards
+- Study and question analytics with Recharts
+- Mock exam entry, subject-based net score calculation, and trend charts
+- Topic-based weakness analysis
+- Image upload and preview with Supabase Storage
+- AI analysis agents for data-driven insights (No hallucination)
+- **Automatic AI Image Analysis:** Automatically extracts topic data from uploaded analysis tables using OpenAI Vision.
 
-## Teknoloji
+## Technology Stack
 
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- shadcn/ui tarzı yerel UI bileşenleri
+- Local UI components (shadcn/ui style)
 - Supabase PostgreSQL, Auth, Storage
 - Recharts
 - OpenAI SDK
 
-## Kurulum
+## Installation
 
 ```bash
 npm install
@@ -33,27 +34,27 @@ cp .env.example .env.local
 npm run dev
 ```
 
-`.env.local` dosyasını doldurun:
+Fill in the `.env.local` file:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+OPENAI_API_KEY=your_openai_key
+OPENAI_MODEL=gpt-4o-mini
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` sadece sunucu tarafı bakım işleri için ayrılmıştır; istemciye gönderilmez.
+`SUPABASE_SERVICE_ROLE_KEY` is reserved for server-side maintenance and is never sent to the client.
 
-## Veritabanı
+## Database Setup
 
-Supabase SQL Editor veya Supabase CLI ile şu migration dosyasını çalıştırın:
+Run the migration file using the Supabase SQL Editor or Supabase CLI:
 
 ```bash
 supabase/migrations/0001_initial_schema.sql
 ```
 
-Migration şunları oluşturur:
+The migration creates:
 
 - `profiles`
 - `study_sessions`
@@ -62,9 +63,9 @@ Migration şunları oluşturur:
 - `topic_question_results`
 - `uploaded_images`
 - `student-uploads` private Storage bucket
-- RLS politikaları
+- RLS policies
 
-Yeni kayıt olan kullanıcılar varsayılan olarak `student` rolüyle profil alır. Admin yapmak için Supabase SQL Editor üzerinden ilgili profili güncelleyin:
+New users receive the `student` role by default. To make a user an admin, update their profile via the Supabase SQL Editor:
 
 ```sql
 update public.profiles
@@ -72,23 +73,23 @@ set role = 'admin'
 where id = 'USER_UUID';
 ```
 
-## AI Raporları
+## AI Agents
 
-Ajanlar `lib/agents` altında bulunur:
+Agents are located under `lib/agents`:
 
 - `studyAnalyticsAgent.ts`
 - `mockExamAgent.ts`
 - `topicWeaknessAgent.ts`
-- `imageAnalysisAgent.ts`
+- `imageAnalysisAgent.ts` (Vision Analysis)
 
-Raporlar yalnızca mevcut veritabanı kayıtlarına dayanır. Veri yoksa şu mesaj gösterilir:
+Reports are based strictly on database records. If no data is available, the following message is shown:
 
 ```text
-Bu analiz için henüz yeterli veri yok.
+Not enough data for this analysis yet.
 ```
 
-`OPENAI_API_KEY` yoksa ajanlar güvenli deterministik özetlerle çalışır. Görsel analiz ajanı şimdilik placeholder olarak metadata kaydeder; Vision çıkarımı otomatik veri üretmez.
+If `OPENAI_API_KEY` is missing, agents work with safe deterministic summaries. The image analysis agent automatically extracts data into the `topic_question_results` table when configured with OpenAI Vision.
 
-## Vercel
+## Deployment on Vercel
 
-Projeyi Vercel’e bağladıktan sonra aynı environment variable değerlerini Vercel Project Settings içinde tanımlayın. Supabase migration çalıştırılmış olmalı.
+After connecting the project to Vercel, define the same environment variable values in the Vercel Project Settings. Ensure the Supabase migration has been executed.
