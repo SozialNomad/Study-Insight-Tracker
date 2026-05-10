@@ -60,11 +60,8 @@ export async function uploadImage(
 
   const aiAnalysis = await analyzeUploadedImageWithAI(path);
 
-  const imagesTable = supabase.from("uploaded_images") as unknown as {
-    insert: (value: unknown) => MutationResult;
-  };
-
-  const { error: insertError } = await imagesTable.insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: insertError } = await (supabase.from("uploaded_images") as any).insert({
     student_id: parsed.data.student_id,
     uploaded_by: user.id,
     image_url: path,
@@ -76,6 +73,31 @@ export async function uploadImage(
     return { error: insertError.message };
   }
 
+  // Eğer AI konu analizlerini bulduysa, bunları topic_question_results tablosuna da kaydet
+  if (aiAnalysis.status === "analyzed" && aiAnalysis.topics && aiAnalysis.topics.length > 0) {
+    const dateStr = aiAnalysis.exam_summary?.date || new Date().toISOString().split("T")[0];
+    const examType = aiAnalysis.exam_summary?.exam_type || "TYT";
+
+    const topicRows = aiAnalysis.topics.map((t) => ({
+      student_id: parsed.data.student_id,
+      date: dateStr,
+      exam_type: examType,
+      subject: t.subject,
+      topic: t.topic,
+      question_count: t.question_count,
+      correct_count: t.correct_count,
+      wrong_count: t.wrong_count,
+      empty_count: t.empty_count,
+      image_url: path,
+      notes: "AI tarafından otomatik analiz edildi."
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("topic_question_results") as any).insert(topicRows);
+  }
+
   revalidatePath("/upload");
+  revalidatePath("/mock-exams/analytics");
+  revalidatePath("/dashboard");
   redirect("/upload");
 }
