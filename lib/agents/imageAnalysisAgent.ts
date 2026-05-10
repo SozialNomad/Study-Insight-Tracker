@@ -117,11 +117,12 @@ export async function analyzeUploadedImageWithAI(
       exam_summary: result.exam_summary,
       message: result.message || "Analiz tamamlandı."
     };
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error;
     return {
       status: "error",
       detected_type: "unknown",
-      message: `AI Analiz hatası: ${err.message}`
+      message: `AI Analiz hatası: ${error.message}`
     };
   }
 }

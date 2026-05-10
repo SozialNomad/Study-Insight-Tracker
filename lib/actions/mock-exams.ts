@@ -7,7 +7,6 @@ import { z } from "zod";
 import { requireProfile } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
-import type { Database } from "@/lib/types/database";
 
 const mockExamSchema = z.object({
   date: z.string().min(1, "Tarih zorunlu."),

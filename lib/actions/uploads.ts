@@ -8,7 +8,6 @@ import { analyzeUploadedImageWithAI } from "@/lib/agents/imageAnalysisAgent";
 import { canSeeAll, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-type MutationResult = Promise<{ error: { message: string } | null }>;
 
 const uploadSchema = z.object({
   image_type: z.enum(["deneme_sonucu", "konu_analizi", "soru_raporu"]),
