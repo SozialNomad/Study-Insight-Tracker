@@ -24,34 +24,38 @@ export default async function DashboardPage() {
   const today = todayISO();
   const weekStart = getWeekStartISO();
 
+  // Fetching all sessions with profiles to show student names for common use
   let query = supabase
     .from("study_sessions")
-    .select("*")
+    .select("*, profiles(full_name)")
     .gte("date", weekStart)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
 
-  if (!canSeeAll(profile)) {
-    query = query.eq("student_id", profile.id);
-  }
+  // Disabled filter to allow common visibility between study partners
+  // if (!canSeeAll(profile)) {
+  //   query = query.eq("student_id", profile.id);
+  // }
 
   const { data: weekSessions = [] } = await query;
 
   let recentQuery = supabase
     .from("study_sessions")
-    .select("*")
+    .select("*, profiles(full_name)")
     .order("date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(8);
 
-  if (!canSeeAll(profile)) {
-    recentQuery = recentQuery.eq("student_id", profile.id);
-  }
+  // if (!canSeeAll(profile)) {
+  //   recentQuery = recentQuery.eq("student_id", profile.id);
+  // }
 
   const { data: recentSessions = [] } = await recentQuery;
 
-  const sessions = (weekSessions ?? []) as StudySession[];
-  const recent = (recentSessions ?? []) as StudySession[];
+  // Type cast to include the joined profile
+  const sessions = (weekSessions ?? []) as (StudySession & { profiles: { full_name: string } })[];
+  const recent = (recentSessions ?? []) as (StudySession & { profiles: { full_name: string } })[];
+  
   const todaySessions = sessions.filter((session) => session.date === today);
   const subjectDurations = sumBy(sessions, "subject", (session) => session.duration_minutes);
   const subjectWrongs = sumBy(sessions, "subject", (session) => session.wrong_answers ?? 0);
@@ -132,6 +136,7 @@ export default async function DashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Öğrenci</TableHead>
                     <TableHead>Tarih</TableHead>
                     <TableHead>Ders</TableHead>
                     <TableHead>Konu</TableHead>
@@ -143,6 +148,9 @@ export default async function DashboardPage() {
                 <TableBody>
                   {recent.map((session) => (
                     <TableRow key={session.id}>
+                      <TableCell className="font-bold text-primary">
+                        {session.profiles?.full_name || "Bilinmiyor"}
+                      </TableCell>
                       <TableCell>{formatDateTR(session.date)}</TableCell>
                       <TableCell className="font-semibold">{session.subject}</TableCell>
                       <TableCell>{session.topic}</TableCell>
