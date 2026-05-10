@@ -9,7 +9,6 @@ import { SUBJECTS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
 
-type MockResultInsert = Database["public"]["Tables"]["mock_exam_subject_results"]["Insert"];
 const mockExamSchema = z.object({
   date: z.string().min(1, "Tarih zorunlu."),
   exam_type: z.enum(["TYT", "AYT"]),
@@ -59,6 +58,8 @@ export async function createMockExam(
   const { user } = await requireProfile();
   const supabase = await createClient();
 
+  // Fetching sessions. Admins see everything, students see only their own.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: exam, error: examError } = await (supabase.from("mock_exams") as any)
     .insert({
       student_id: user.id,
@@ -75,6 +76,7 @@ export async function createMockExam(
     return { error: examError?.message ?? "Deneme kaydedilemedi." };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: rowsError } = await (supabase.from("mock_exam_subject_results") as any).insert(
     subjectRows.map((row) => ({
       mock_exam_id: exam.id,
@@ -130,6 +132,7 @@ export async function updateMockExam(
   const supabase = await createClient();
 
   // Update mock_exam
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: examError } = await (supabase.from("mock_exams") as any)
     .update({
       date: parsed.data.date,
@@ -146,8 +149,10 @@ export async function updateMockExam(
   }
 
   // Delete old results and insert new ones
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase.from("mock_exam_subject_results") as any).delete().eq("mock_exam_id", examId);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: rowsError } = await (supabase.from("mock_exam_subject_results") as any).insert(
     subjectRows.map((row) => ({
       mock_exam_id: examId,
