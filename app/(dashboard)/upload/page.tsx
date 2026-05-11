@@ -7,11 +7,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { canSeeAll, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, UploadedImage } from "@/lib/types/database";
+import type { Json, Profile, UploadedImage } from "@/lib/types/database";
 import { formatDateTR } from "@/lib/utils";
 
 type ImageWithSignedUrl = UploadedImage & {
   signedUrl: string | null;
+};
+
+type AIAnalysisSummary = {
+  status?: string;
+  message?: string;
 };
 
 export default async function UploadPage() {
@@ -44,18 +49,18 @@ export default async function UploadPage() {
   return (
     <>
       <PageHeader
-        title="Görsel Yükle"
-        description="Soru raporu ve deneme ekran görüntülerini sakla; AI analizi için güvenli zemin hazır."
+        title="Deneme Görseli Yükle"
+        description="TYT veya AYT deneme konu analizi ekran görüntüsünü yükle."
       />
 
       <UploadForm profile={profile} students={students} />
 
       <section className="mt-6">
-        <h2 className="mb-3 text-xl font-black">Yüklenen görseller</h2>
+        <h2 className="mb-3 text-xl font-black">Yüklenen deneme görselleri</h2>
         {images.length === 0 ? (
           <EmptyState
-            title="Henüz görsel yok"
-            description="Yüklenen görseller burada önizleme kartları olarak listelenecek."
+            title="Henüz deneme görseli yok"
+            description="Yüklenen deneme konu analizi görselleri burada listelenecek."
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -102,20 +107,29 @@ function ImageCard({ image }: { image: ImageWithSignedUrl }) {
           </span>
         </div>
 
-        {image.ai_analysis && typeof image.ai_analysis === 'object' && (
+        {getAIAnalysisSummary(image.ai_analysis) ? (
           <div className="mt-3 rounded-xl bg-muted/50 p-3 text-xs">
             <div className="mb-1 flex items-center gap-2 font-bold">
               <span>AI Analizi:</span>
-              <AIStatusBadge status={(image.ai_analysis as any).status} />
+              <AIStatusBadge status={getAIAnalysisSummary(image.ai_analysis)?.status} />
             </div>
             <p className="text-muted-foreground italic">
-              {(image.ai_analysis as any).message || "Mesaj yok."}
+              {getAIAnalysisSummary(image.ai_analysis)?.message || "Mesaj yok."}
             </p>
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );
+}
+
+function getAIAnalysisSummary(value: Json | null): AIAnalysisSummary | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  return {
+    status: typeof value.status === "string" ? value.status : undefined,
+    message: typeof value.message === "string" ? value.message : undefined
+  };
 }
 
 function AIStatusBadge({ status }: { status?: string }) {
@@ -123,7 +137,7 @@ function AIStatusBadge({ status }: { status?: string }) {
     case "analyzed":
       return <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-none px-2 py-0 h-5 text-[10px]">Tamamlandı</Badge>;
     case "error":
-      return <Badge variant="destructive" className="px-2 py-0 h-5 text-[10px]">Hata</Badge>;
+      return <Badge variant="outline" className="border-red-200 px-2 py-0 h-5 text-[10px] text-red-600">Hata</Badge>;
     case "not_configured":
       return <Badge variant="outline" className="px-2 py-0 h-5 text-[10px]">Yapılandırılmadı</Badge>;
     default:

@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { uploadImage, type UploadActionState } from "@/lib/actions/uploads";
-import { IMAGE_TYPES } from "@/lib/constants";
 import type { Profile } from "@/lib/types/database";
 
 const initialState: UploadActionState = {};
@@ -27,13 +26,15 @@ export function UploadForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Görsel yükle</CardTitle>
+        <CardTitle>Deneme görseli yükle</CardTitle>
         <CardDescription>
-          Deneme sonucu, konu analizi veya soru raporu ekran görüntüsünü sakla.
+          TYT veya AYT deneme konu analizi ekran görüntüsünü yükle.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="grid gap-5 md:grid-cols-2">
+          <input type="hidden" name="image_type" value="deneme_sonucu" />
+
           <div className="space-y-2">
             <Label>Öğrenci</Label>
             <Select name="student_id" defaultValue={profile.id} disabled={profile.role !== "admin"}>
@@ -46,17 +47,6 @@ export function UploadForm({
             {profile.role !== "admin" ? (
               <input type="hidden" name="student_id" value={profile.id} />
             ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Görsel Türü</Label>
-            <Select name="image_type" defaultValue="deneme_sonucu">
-              {IMAGE_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </Select>
           </div>
 
           <div className="space-y-2 md:col-span-2">

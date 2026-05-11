@@ -31,7 +31,5 @@ export const RESOURCE_SUGGESTIONS = [
 ];
 
 export const IMAGE_TYPES: { value: ImageType; label: string }[] = [
-  { value: "deneme_sonucu", label: "Deneme sonucu" },
-  { value: "konu_analizi", label: "Konu analizi" },
-  { value: "soru_raporu", label: "Soru raporu" }
+  { value: "deneme_sonucu", label: "Deneme konu analizi" }
 ];

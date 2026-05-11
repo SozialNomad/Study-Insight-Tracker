@@ -26,8 +26,8 @@ const navItems = [
   { href: "/mock-exams/new", label: "Deneme Ekle", icon: NotebookPen },
   { href: "/mock-exams", label: "Denemeler", icon: ClipboardList },
   { href: "/mock-exams/analytics", label: "Deneme Analizi", icon: LineChart },
-  { href: "/topic-analysis", label: "Konu Analizi", icon: Target },
-  { href: "/upload", label: "Görsel Yükle", icon: ImageUp },
+  { href: "/topic-analysis", label: "Deneme Konu Analizi", icon: Target },
+  { href: "/upload", label: "Deneme Görseli", icon: ImageUp },
   { href: "/ai-reports", label: "AI Raporları", icon: BrainCircuit }
 ];
 

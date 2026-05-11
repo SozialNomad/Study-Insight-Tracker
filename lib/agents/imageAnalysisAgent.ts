@@ -63,11 +63,24 @@ export async function analyzeUploadedImageWithAI(
       messages: [
         {
           role: "system",
-          content: `Sen bir eğitim asistanısın. Öğrencilerin yüklediği deneme sonuçları, konu analiz tabloları veya soru çözüm raporlarını analiz edersin. 
+          content: `Sen bir eğitim asistanısın. Öğrencilerin yüklediği TYT/AYT deneme konu analizi görsellerini analiz edersin.
           Çıktıyı SADECE JSON formatında vermelisin.
+          
+          Görsel okuma kuralları:
+          - Tablolarda DC doğru cevap, ÖC öğrencinin cevabı, SN sonuç anlamına gelir.
+          - ÖC boş, "-", okunamıyor veya işaretlenmemişse o satırı topics dizisine hiç ekleme.
+          - DC ve ÖC aynıysa correct_count 1, wrong_count 0, empty_count 0 yaz.
+          - DC ve ÖC farklıysa correct_count 0, wrong_count 1, empty_count 0 yaz.
+          - Her soru satırı için question_count 1 olmalı. Aynı konu birden çok kez gelirse ayrı satır olarak yazabilirsin.
+          - Görselde Edebiyat tablosu varsa sınav türünü AYT kabul et.
+          - AYT için sadece Edebiyat, Matematik, Tarih ve Coğrafya tablolarındaki satırları al. Fizik, Kimya, Biyoloji, Felsefe, Psikoloji ve diğerlerini alma. Tarih-2 ve Coğrafya-2 görürsen Tarih ve Coğrafya olarak normalize et.
+          - TYT için Türkçe, Matematik, Sosyal ve Fen kapsamındaki satırları al. Sosyal altındaki Tarih, Coğrafya, Felsefe, Din Kültürü; Fen altındaki Fizik, Kimya, Biyoloji satırlarını kendi ders adlarıyla yaz.
+          - Konu adlarını tabloda yazdığı gibi oku; çok uzunsa okunabilen anlamlı kısmı kullan.
+          - Görsel bu formatta bir deneme konu analizi değilse detected_type "unknown" döndür ve topics boş olsun.
+          
           JSON yapısı:
           {
-            "detected_type": "deneme_sonucu" | "konu_analizi" | "soru_raporu" | "unknown",
+            "detected_type": "deneme_sonucu" | "unknown",
             "message": "Analiz özeti",
             "topics": [
               {
@@ -91,7 +104,7 @@ export async function analyzeUploadedImageWithAI(
           content: [
             {
               type: "text",
-              text: "Bu görseldeki verileri analiz et ve tabloları oku. Eğer görsel bir konu analizi ise 'topics' dizisini doldur. Eğer genel bir deneme sonucu ise 'exam_summary' kısmını doldur."
+              text: "Bu deneme konu analizi görselindeki tabloları oku. TYT/AYT türünü kurallara göre belirle, yalnızca desteklenen derslerden DC/ÖC karşılaştırması yapılabilen dolu öğrenci cevaplarını topics dizisine ekle."
             },
             {
               type: "image_url",

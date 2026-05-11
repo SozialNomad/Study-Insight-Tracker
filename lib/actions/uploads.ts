@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 
 
 const uploadSchema = z.object({
-  image_type: z.enum(["deneme_sonucu", "konu_analizi", "soru_raporu"]),
+  image_type: z.literal("deneme_sonucu"),
   student_id: z.string().uuid()
 });
 
@@ -76,6 +76,7 @@ export async function uploadImage(
   if (aiAnalysis.status === "analyzed" && aiAnalysis.topics && aiAnalysis.topics.length > 0) {
     const dateStr = aiAnalysis.exam_summary?.date || new Date().toISOString().split("T")[0];
     const examType = aiAnalysis.exam_summary?.exam_type || "TYT";
+    const examName = aiAnalysis.exam_summary?.exam_name || "Yüklenen deneme";
 
     const topicRows = aiAnalysis.topics.map((t) => ({
       student_id: parsed.data.student_id,
@@ -83,6 +84,7 @@ export async function uploadImage(
       exam_type: examType,
       subject: t.subject,
       topic: t.topic,
+      source: examName,
       question_count: t.question_count,
       correct_count: t.correct_count,
       wrong_count: t.wrong_count,
@@ -102,6 +104,7 @@ export async function uploadImage(
   }
 
   revalidatePath("/upload");
+  revalidatePath("/topic-analysis");
   revalidatePath("/mock-exams/analytics");
   revalidatePath("/dashboard");
   redirect("/upload");
