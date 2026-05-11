@@ -49,6 +49,14 @@ export function UploadForm({
             ) : null}
           </div>
 
+          <div className="space-y-2">
+            <Label>Sınav Türü</Label>
+            <Select name="exam_type" defaultValue="TYT" required>
+              <option value="TYT">TYT</option>
+              <option value="AYT">AYT</option>
+            </Select>
+          </div>
+
           <div className="space-y-2 md:col-span-2">
             <Label>Görsel</Label>
             <Input

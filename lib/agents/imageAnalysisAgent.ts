@@ -23,7 +23,8 @@ export type ImageAnalysisResult = {
 };
 
 export async function analyzeUploadedImageWithAI(
-  storagePath: string
+  storagePath: string,
+  selectedExamType: "TYT" | "AYT"
 ): Promise<ImageAnalysisResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
@@ -72,8 +73,9 @@ export async function analyzeUploadedImageWithAI(
           - DC ve ÖC aynıysa correct_count 1, wrong_count 0, empty_count 0 yaz.
           - DC ve ÖC farklıysa correct_count 0, wrong_count 1, empty_count 0 yaz.
           - Her soru satırı için question_count 1 olmalı. Aynı konu birden çok kez gelirse ayrı satır olarak yazabilirsin.
-          - Görselde Edebiyat tablosu varsa sınav türünü AYT kabul et.
-          - AYT için sadece Edebiyat, Matematik, Tarih ve Coğrafya tablolarındaki satırları al. Fizik, Kimya, Biyoloji, Felsefe, Psikoloji ve diğerlerini alma. Tarih-2 ve Coğrafya-2 görürsen Tarih ve Coğrafya olarak normalize et.
+          - Kullanıcının seçtiği sınav türü ${selectedExamType}. exam_summary.exam_type alanını mutlaka "${selectedExamType}" yaz.
+          - AYT için sadece Edebiyat, Matematik, Tarih-1 ve Coğrafya-1 tablolarındaki satırları al. Fizik, Kimya, Biyoloji, Felsefe, Psikoloji, Seçmeli Felsefe, Tarih-2, Coğrafya-2 ve diğer dersleri kesinlikle alma.
+          - AYT görselinde başlık sadece "Tarih" ise bunu Tarih-1, başlık sadece "Coğrafya" ise bunu Coğrafya-1 kabul et. "Tarih-2" ve "Coğrafya-2" başlıklarını alma.
           - TYT için Türkçe, Matematik, Sosyal ve Fen kapsamındaki satırları al. Sosyal altındaki Tarih, Coğrafya, Felsefe, Din Kültürü; Fen altındaki Fizik, Kimya, Biyoloji satırlarını kendi ders adlarıyla yaz.
           - Konu adlarını tabloda yazdığı gibi oku; çok uzunsa okunabilen anlamlı kısmı kullan.
           - Görsel bu formatta bir deneme konu analizi değilse detected_type "unknown" döndür ve topics boş olsun.
@@ -86,10 +88,10 @@ export async function analyzeUploadedImageWithAI(
               {
                 "subject": "Matematik",
                 "topic": "Üslü Sayılar",
-                "question_count": 10,
-                "correct_count": 8,
+                "question_count": 1,
+                "correct_count": 0,
                 "wrong_count": 1,
-                "empty_count": 1
+                "empty_count": 0
               }
             ],
             "exam_summary": {
@@ -104,7 +106,7 @@ export async function analyzeUploadedImageWithAI(
           content: [
             {
               type: "text",
-              text: "Bu deneme konu analizi görselindeki tabloları oku. TYT/AYT türünü kurallara göre belirle, yalnızca desteklenen derslerden DC/ÖC karşılaştırması yapılabilen dolu öğrenci cevaplarını topics dizisine ekle."
+              text: `Bu deneme konu analizi görselindeki tabloları oku. Kullanıcının seçtiği sınav türü ${selectedExamType}. Yalnızca bu sınav türü için desteklenen derslerden DC/ÖC karşılaştırması yapılabilen dolu öğrenci cevaplarını topics dizisine ekle.`
             },
             {
               type: "image_url",
@@ -127,7 +129,10 @@ export async function analyzeUploadedImageWithAI(
       status: "analyzed",
       detected_type: result.detected_type || "unknown",
       topics: result.topics,
-      exam_summary: result.exam_summary,
+      exam_summary: {
+        ...result.exam_summary,
+        exam_type: selectedExamType
+      },
       message: result.message || "Analiz tamamlandı."
     };
   } catch (err) {
