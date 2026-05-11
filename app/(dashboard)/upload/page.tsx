@@ -95,13 +95,38 @@ function ImageCard({ image }: { image: ImageWithSignedUrl }) {
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Badge variant="secondary">{image.image_type}</Badge>
           <span className="text-sm text-muted-foreground">
             {formatDateTR(image.created_at)}
           </span>
         </div>
+
+        {image.ai_analysis && typeof image.ai_analysis === 'object' && (
+          <div className="mt-3 rounded-xl bg-muted/50 p-3 text-xs">
+            <div className="mb-1 flex items-center gap-2 font-bold">
+              <span>AI Analizi:</span>
+              <AIStatusBadge status={(image.ai_analysis as any).status} />
+            </div>
+            <p className="text-muted-foreground italic">
+              {(image.ai_analysis as any).message || "Mesaj yok."}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
+}
+
+function AIStatusBadge({ status }: { status?: string }) {
+  switch (status) {
+    case "analyzed":
+      return <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-none px-2 py-0 h-5 text-[10px]">Tamamlandı</Badge>;
+    case "error":
+      return <Badge variant="destructive" className="px-2 py-0 h-5 text-[10px]">Hata</Badge>;
+    case "not_configured":
+      return <Badge variant="outline" className="px-2 py-0 h-5 text-[10px]">Yapılandırılmadı</Badge>;
+    default:
+      return <Badge variant="secondary" className="px-2 py-0 h-5 text-[10px]">Bilinmiyor</Badge>;
+  }
 }

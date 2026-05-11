@@ -6,7 +6,7 @@ export async function generateTurkishInsight(prompt: string, data: unknown) {
   try {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = await client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+      model: process.env.OPENAI_MODEL || "gpt-5.4",
       temperature: 0.2,
       messages: [
         {

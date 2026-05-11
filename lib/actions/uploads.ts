@@ -92,7 +92,13 @@ export async function uploadImage(
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("topic_question_results") as any).insert(topicRows);
+    const { error: topicError } = await (supabase.from("topic_question_results") as any).insert(topicRows);
+    
+    if (topicError) {
+      console.error("Topic insertion error:", topicError);
+      // We don't necessarily want to fail the whole action if the image was uploaded
+      // but we should at least log it or handle it.
+    }
   }
 
   revalidatePath("/upload");
